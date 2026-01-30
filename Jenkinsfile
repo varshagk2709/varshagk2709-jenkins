@@ -58,7 +58,7 @@ pipeline {
                 "C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" start
                 "C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" status
                 
-                "C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" image load vedhshetty/myapp:latest
+                "C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" image load varshagk2709/myapp:latest
                 kubectl apply -f deployment.yaml
                 timeout /t 20
                 kubectl get pods
