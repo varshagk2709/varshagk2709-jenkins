@@ -9,7 +9,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                echo "Pulling from GITHUB repository"
-               git branch: 'main', credentialsId: 'mygithubcred', url: 'https://github.com/chntraining/devopsjan.git'
+               git branch: 'main', credentialsId: 'mygithubcred', url: 'https://github.com/varshagk2709/varshagk2709-jenkins.git'
             }
         }
          stage('Test the Project') {
@@ -19,7 +19,7 @@ pipeline {
             }
               post {
                   always {
-                         junit '**/target/surefire-reports/*.xml'
+                         junit '*/target/surefire-reports/.xml'
                          echo 'Test Run succeeded!'          
 					}
 				}
@@ -37,63 +37,67 @@ pipeline {
             }
         }
          stage('Push Docker Image to DockerHub') {
-            steps {
-               echo "Push Docker Image to DockerHub for mvn project"
-                 withCredentials([string(credentialsId: 'dockerhubpwd', variable: 'DOCKER_PASS')]) {
-                         bat '''
-   	        echo %DOCKER_PASS% | docker login -u deepikkaa20 --password-stdin
-                         docker tag mvnproj:1.0 deepikkaa20/mymvnproj:latest
-                         docker push deepikkaa20/mymvnproj:latest
-                         '''
-                  }
-            }
-        }
+		    steps {
+		        withCredentials([usernamePassword(credentialsId: 'mydockercred',
+		                                          usernameVariable: 'DOCKER_USER',
+		                                          passwordVariable: 'DOCKER_PASS')]) {
+		            bat '''
+		            docker logout
+		            echo %DOCKER_PASS%| docker login -u %DOCKER_USER% --password-stdin
+		            docker tag mvnproj:1.0 %DOCKER_USER%/myapp:latest
+		            docker push %DOCKER_USER%/myapp:latest
+		            '''
+		        }
+		    }
+		}
+
        
         stage('Deploy the project using k8s') {
             steps {
-                echo "Running Java Application in k8s"
+                echo "Running Java Application"
                 bat '''
-                   minikube delete
-	               minikube start
-	               minikube status
-	               
-	               minikube image load deepikkaa20/mymvnproj:latest
-	               kubectl apply -f deployment.yaml
-	               sleep 20
-	               kubectl get pods
-	               kubectl apply -f services.yaml
-	               sleep 10
-	               kubectl get services
-	               minikube image ls   
-	           
-	            '''
-            }
-        }
-        stage('Parrallel Loading of services and Dashboard'){
+                "C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" delete
+                "C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" start
+                "C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" status
+                
+                "C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" image load varshagk2709/mymvnproj:latest
+                kubectl apply -f deployment.yaml
+                sleep 20
+                kubectl get pods
+                kubectl apply -f services.yaml
+                sleep 10
+                kubectl get services
+                "C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" image ls
+				'''
+			    }
+		 }
+		 
+		 stage('Parallel Loading of Services and Dashboard'){
 			parallel{
-				stage('Run minikube dashboard'){
-                    steps{
-                        echo "Running minikube dashboard"
-                        bat '''
-                           minikube dashboard
-                           echo "Dashboard is running"
-                        '''
-                    }
-					
+				stage('Run Minikube Dashboard'){
+					steps{
+						echo "Running Minikube Dashboard"
+						bat '''
+							"C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" addons enable metrics-server
+							"C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" dashboard
+							echo "Dashboard is running"
+						'''
+					}
 				}
 				stage('Run minikube services'){
-                    steps{
-                        echo "Running minikube services"
-                        bat '''
-                           minikube service --all
-                           echo "All services are running"
-                        '''				
-				}
+					steps{
+						echo "Running minikube services"
+						bat '''
+							"C:\\Program Files\\Kubernetes\\Minikube\\minikube.exe" service --all
+							echo "All services are running"
+						'''
+					}
+		 		}
 			}
-		}
-        
-    }
+		 }
+		 
 	}
+
     post {
         success {
             echo 'I succeeded!'
